@@ -7,6 +7,7 @@
 		"clean": "rm -rf dist && echo '✅ - Done.'",
 		"dev:db": "turso dev --port 8077 --db-file databases/local.db",
 		"dev:db:change:push": "npx drizzle-kit push",
+		"dev:db:local:backup": "sqlite3 databases/local.db '.dump' > databases/backup.sql",
 		"dev": "bun --watch run src/index.ts"
 	},
 	"devDependencies": {
