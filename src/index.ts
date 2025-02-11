@@ -1,6 +1,9 @@
 import path from "node:path";
 import "@env";
-import type { NielsenRadioStationRecord } from "@types";
+import type {
+	NielsenRadioStationRecord,
+	NielsenRadioStationRecordV0125,
+} from "@types";
 import { DATASOURCES, NIELSEN_RADIO_STATION_KEYS } from "@constants";
 import {
 	exportToJSON,
@@ -39,10 +42,14 @@ async function main() {
 		}
 
 		if (Number(Bun.env.EXPORT_DATA)) {
-			const transformedData: NielsenRadioStationRecord[] = csvData.map((row) =>
-				transformCsvRowData<
-					NielsenRadioStationRecord & { oct: string; nov: string; dec: string }
-				>(row, [...NIELSEN_RADIO_STATION_KEYS, "oct", "nov", "dec"]),
+			const transformedData: NielsenRadioStationRecordV0125[] = csvData.map(
+				(row) =>
+					transformCsvRowData<NielsenRadioStationRecordV0125>(row, [
+						...NIELSEN_RADIO_STATION_KEYS,
+						"oct",
+						"nov",
+						"dec",
+					]),
 			);
 
 			await exportToJSON(transformedData);
