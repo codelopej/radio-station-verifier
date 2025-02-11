@@ -1,9 +1,9 @@
 import path from "node:path";
 import "@env";
-import { TursoClient } from "@lib/turso";
 import type { NielsenRadioStationRecord } from "@types";
 import { DATASOURCES, NIELSEN_RADIO_STATION_KEYS } from "@constants";
 import {
+	exportToJSON,
 	fileExists,
 	processCSV,
 	processData,
@@ -28,13 +28,25 @@ async function main() {
 
 		const csvData = await processCSV(csvPath);
 
-		const transformedData: NielsenRadioStationRecord[] = csvData.map((row) =>
-			transformCsvRowData<NielsenRadioStationRecord>(row, [
-				...NIELSEN_RADIO_STATION_KEYS,
-			]),
-		);
+		if (Number(Bun.env.PROCESS_DATA)) {
+			const transformedData: NielsenRadioStationRecord[] = csvData.map((row) =>
+				transformCsvRowData<NielsenRadioStationRecord>(row, [
+					...NIELSEN_RADIO_STATION_KEYS,
+				]),
+			);
 
-		await processData(transformedData);
+			await processData(transformedData);
+		}
+
+		if (Number(Bun.env.EXPORT_DATA)) {
+			const transformedData: NielsenRadioStationRecord[] = csvData.map((row) =>
+				transformCsvRowData<
+					NielsenRadioStationRecord & { oct: string; nov: string; dec: string }
+				>(row, [...NIELSEN_RADIO_STATION_KEYS, "oct", "nov", "dec"]),
+			);
+
+			await exportToJSON(transformedData);
+		}
 
 		// await TursoClient.close(); // Always close the database connection
 	} catch (error) {

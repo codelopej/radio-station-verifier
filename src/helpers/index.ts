@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { parse } from "csv-parse/sync";
 import { eq } from "drizzle-orm";
@@ -7,7 +8,9 @@ import type {
 	DrizzleDatabase,
 	GeneratedResponse,
 	NielsenRadioStationRecord,
+	NielsenRadioStationRecordV0125,
 	RadioStation,
+	RadioStationWithRatings,
 	StructuredCsvNielsenRadioStationsFile,
 } from "@types";
 import { radioStationsTable } from "@lib/drizzle/schemas";
@@ -99,6 +102,55 @@ export const processData = async (rows: NielsenRadioStationRecord[]) => {
 
 		setTimeout(() => processData(rows), GENERATE_GROUPED_DATA_DELAY);
 	}
+};
+
+export const exportToJSON = async (rows: NielsenRadioStationRecordV0125[]) => {
+	const __dirname = path.dirname(__filename);
+	const jsonPath = path.join(
+		__dirname,
+		"../../datasources/json/radio-stations.json",
+	);
+
+	if (await fileExists(jsonPath)) {
+		await fs.promises.unlink(jsonPath);
+	} else {
+		await fs.promises.mkdir(path.dirname(jsonPath), { recursive: true });
+	}
+
+	const db: DrizzleDatabase = DrizzleClient.getInstance();
+	const radioStations: RadioStationWithRatings[] = [];
+
+	for (const row of rows) {
+		const matchedCriteria = await db
+			.select()
+			.from(radioStationsTable)
+			.where(eq(radioStationsTable.callSign, row.callSign));
+
+		if (matchedCriteria?.length) {
+			const radioStation = matchedCriteria[0];
+
+			radioStations.push({
+				...radioStation,
+				ratings: [
+					{
+						month: "oct",
+						rating: row.oct,
+					},
+					{
+						month: "nov",
+						rating: row.nov,
+					},
+					{
+						month: "dec",
+						rating: row.dec,
+					},
+				],
+			});
+		}
+	}
+
+	const json = JSON.stringify(radioStations, null, 2);
+	await fs.promises.writeFile(jsonPath, json);
 };
 
 const insertRadioStationIfNotExists = async (

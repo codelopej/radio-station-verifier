@@ -19,7 +19,17 @@ export type NielsenRadioStationRecord = {
 	[K in (typeof NIELSEN_RADIO_STATION_KEYS)[number]]: string;
 };
 
+export type NielsenRadioStationRecordV0125 = NielsenRadioStationRecord & {
+	oct: string;
+	nov: string;
+	dec: string;
+};
+
 export type RadioStation = typeof radioStationsTable.$inferInsert;
+
+export type RadioStationWithRatings = RadioStation & {
+	ratings: Array<Record<string, string>>;
+};
 
 export type GeneratedResponse = {
 	callSign?: string;
